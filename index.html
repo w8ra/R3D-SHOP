@@ -32,7 +32,7 @@
                 <div class="flex-shrink-0">
                     <h1 class="text-2xl font-bold text-white">
                         <i class="fas fa-store-alt ml-2"></i>
-                        R3D SHOP
+                        متجر البوتات والحسابات
                     </h1>
                 </div>
             </div>
@@ -124,7 +124,7 @@
 <main class="pt-24 pb-12 px-4">
     <!-- قسم الترحيب -->
     <div class="max-w-7xl mx-auto mb-12 text-center">
-        <h1 class="text-5xl font-bold text-white mb-4">R3D SHOP</h1>
+        <h1 class="text-5xl font-bold text-white mb-4">متجر البوتات والحسابات</h1>
         <p class="text-xl text-white/90 max-w-3xl mx-auto">
             اكتشف أفضل بوتات ديسكورد، حسابات مميزة، وخدمات احترافية بأسعار تنافسية
         </p>
@@ -169,7 +169,7 @@
             <div id="supportSuccess" class="hidden mt-4 p-4 bg-green-100 text-green-700 rounded-lg text-center"></div>
         </div>
 
-        <!-- روابط التواصل - فقط ديسكورد وانستغرام -->
+        <!-- روابط التواصل - ديسكورد وانستغرام فقط -->
         <div id="contact" class="glass-card rounded-3xl p-8">
             <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">
                 <i class="fas fa-globe ml-2 text-purple-600"></i>
@@ -206,6 +206,11 @@
 </footer>
 
 <script>
+    // =====================================
+    // إعدادات Webhook
+    // =====================================
+    const WEBHOOK_URL = "https://discord.com/api/webhooks/1474790054621876375/2N1rNi7fRD4A0qids_gA9y0vEuiYzREGbOcEmlWhAASum4dsXqZd2y0luA9JHFUd7Sth";
+
     // =====================================
     // بيانات المنتجات
     // =====================================
@@ -361,23 +366,36 @@
         if (method === 'paypal') {
             showNotification('🔄 جاري التوجيه إلى PayPal...', 'info');
             setTimeout(() => {
-                showNotification('✅ تم إتمام الدفع عبر PayPal بنجاح', 'success');
-                completeOrder();
+                completeOrder('paypal');
             }, 2000);
         }
         else if (method === 'probot') {
-            // حساب الكريدت المطلوب (1 كريدت = $0.01)
             const creditsNeeded = Math.ceil(total * 100);
             showNotification(`🤖 تحتاج ${creditsNeeded} كريدت للدفع`, 'info');
             
             setTimeout(() => {
-                showNotification(`✅ تم خصم ${creditsNeeded} كريدت من حساب ProBot`, 'success');
-                completeOrder();
+                completeOrder('probot');
             }, 2000);
         }
     };
 
-    function completeOrder() {
+    // =====================================
+    // إتمام الطلب مع إرسال للويب هوك
+    // =====================================
+    function completeOrder(method) {
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        const itemsList = cart.map(item => `- ${item.name} ($${item.price})`).join('\n');
+        const paymentMethod = method === 'paypal' ? 'PayPal' : 'ProBot Credits';
+        
+        // إرسال للويب هوك مع منشن
+        fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: `@everyone\n\n🛒 **طلب جديد**\n💳 طريقة الدفع: ${paymentMethod}\n💰 المبلغ: $${total}\n📦 المنتجات:\n${itemsList}`
+            })
+        }).catch(error => console.error('خطأ في إرسال الويب هوك:', error));
+        
         cart = [];
         updateCart();
         closePaymentModal();
@@ -385,9 +403,9 @@
     }
 
     // =====================================
-    // دوال الدعم الفني
+    // دوال الدعم الفني مع إرسال للويب هوك - بالشكل المطلوب
     // =====================================
-    window.sendSupportMessage = function(event) {
+    window.sendSupportMessage = async function(event) {
         event.preventDefault();
         
         const name = document.getElementById('supportName').value;
@@ -395,21 +413,39 @@
         const type = document.getElementById('supportType').value;
         const message = document.getElementById('supportMessage').value;
         
-        // محاكاة إرسال الرسالة
+        // إنشاء رقم تذكرة عشوائي
+        const ticketNumber = Math.floor(Math.random() * 10000);
+        
+        // تنسيق التاريخ والوقت
+        const now = new Date();
+        const date = now.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+        const time = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
         showNotification('📨 جاري إرسال رسالتك...', 'info');
         
-        setTimeout(() => {
+        try {
+            // إرسال للويب هوك بالشكل المطلوب تماماً
+            await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: `@everyone\n\n📩 **رسالة دعم جديدة**\n\n**معلومات المرسل**\n━━━━━━━━━━━━━━━━━━━━\n👤 الاسم: ${name}\n📧 البريد: ${email}\n\n**تفاصيل الطلب**\n━━━━━━━━━━━━━━━━━━━━\n🔧 نوع الاستفسار: ${type}\n💬 الرسالة: ${message}\n\n**معلومات إضافية**\n━━━━━━━━━━━━━━━━━━━━\n🕐 تاريخ الإرسال: ${date} في ${time}\n🎫 رقم التذكرة: #${ticketNumber}`
+                })
+            });
+            
             document.getElementById('supportForm').reset();
             const successDiv = document.getElementById('supportSuccess');
             successDiv.classList.remove('hidden');
-            successDiv.innerHTML = '✅ تم إرسال رسالتك بنجاح! سنتواصل معك قريباً';
+            successDiv.innerHTML = `✅ تم إرسال رسالتك بنجاح! رقم التذكرة: #${ticketNumber}`;
             
             setTimeout(() => {
                 successDiv.classList.add('hidden');
             }, 5000);
             
-            showNotification('✅ تم إرسال رسالتك بنجاح', 'success');
-        }, 1500);
+            showNotification(`✅ تم إرسال رسالتك بنجاح - تذكرة #${ticketNumber}`, 'success');
+        } catch (error) {
+            showNotification('❌ فشل الإرسال', 'error');
+        }
     };
 
     // =====================================
