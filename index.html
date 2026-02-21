@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متجر البوتات والحسابات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { font-family: 'Cairo', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .product-card { transition: all 0.3s ease; }
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<!-- شريط التنقل -->
+<nav class="bg-white/10 backdrop-blur-lg fixed w-full z-50 top-0 border-b border-white/20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <h1 class="text-2xl font-bold text-white">
+                        <i class="fas fa-store-alt ml-2"></i>
+                        R3D SHOP
+                    </h1>
+                </div>
+            </div>
+            <div class="hidden md:block">
+                <div class="flex items-center space-x-8 space-x-reverse">
+                    <a href="#" class="text-white hover:text-gray-200 px-3 py-2 text-sm font-medium">الرئيسية</a>
+                    <a href="#products" class="text-white hover:text-gray-200 px-3 py-2 text-sm font-medium">المنتجات</a>
+                    <a href="#support" class="text-white hover:text-gray-200 px-3 py-2 text-sm font-medium">الدعم الفني</a>
+                    <a href="#contact" class="text-white hover:text-gray-200 px-3 py-2 text-sm font-medium">تواصل معنا</a>
+                    <button onclick="toggleCart()" class="bg-white text-purple-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition relative">
+                        <i class="fas fa-shopping-cart ml-2"></i>
+                        السلة
+                        <span id="cartCount" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- سلة التسوق المنبثقة -->
+<div id="cartSidebar" class="fixed top-0 left-0 h-full w-96 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 overflow-y-auto">
+    <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">سلة المشتريات</h2>
+            <button onclick="toggleCart()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+        <div id="cartItems" class="space-y-4 max-h-96 overflow-y-auto"></div>
+        
+        <!-- إجمالي السلة -->
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-lg font-bold text-gray-800">المجموع:</span>
+                <span id="cartTotal" class="text-2xl font-bold text-purple-600">$0.00</span>
+            </div>
+            
+            <!-- زر الدفع -->
+            <button onclick="showPaymentOptions()" class="w-full bg-gradient-to-l from-purple-600 to-pink-600 text-white py-3 rounded-lg font-bold hover:opacity-90 transition">
+                متابعة الدفع
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة الدفع المنبثقة -->
+<div id="paymentModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-3xl p-8 max-w-md w-full mx-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-800">اختر طريقة الدفع</h3>
+            <button onclick="closePaymentModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+        
+        <!-- طرق الدفع - PayPal و ProBot -->
+        <div class="space-y-4">
+            <!-- PayPal -->
+            <button onclick="processPayment('paypal')" class="w-full bg-blue-600 text-white p-4 rounded-xl hover:bg-blue-700 transition flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fab fa-paypal text-2xl ml-3"></i>
+                    <span class="font-bold">PayPal</span>
+                </div>
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            <!-- ProBot Credits -->
+            <button onclick="processPayment('probot')" class="w-full bg-indigo-600 text-white p-4 rounded-xl hover:bg-indigo-700 transition flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-robot text-2xl ml-3"></i>
+                    <span class="font-bold">ProBot Credits</span>
+                </div>
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+        
+        <!-- المبلغ -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-xl">
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">المبلغ المطلوب:</span>
+                <span id="modalTotal" class="text-2xl font-bold text-purple-600">$0.00</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- المحتوى الرئيسي -->
+<main class="pt-24 pb-12 px-4">
+    <!-- قسم الترحيب -->
+    <div class="max-w-7xl mx-auto mb-12 text-center">
+        <h1 class="text-5xl font-bold text-white mb-4">R3D SHOP</h1>
+        <p class="text-xl text-white/90 max-w-3xl mx-auto">
+            اكتشف أفضل بوتات ديسكورد، حسابات مميزة، وخدمات احترافية بأسعار تنافسية
+        </p>
+    </div>
+
+    <!-- المنتجات -->
+    <div id="products" class="max-w-7xl mx-auto mb-16">
+        <h2 class="text-3xl font-bold text-white mb-8 text-center">المنتجات</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="productsGrid"></div>
+    </div>
+
+    <!-- قسم الدعم الفني والتواصل -->
+    <div id="support" class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+        <!-- نموذج الدعم الفني -->
+        <div class="glass-card rounded-3xl p-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+                <i class="fas fa-headset ml-2 text-purple-600"></i>
+                الدعم الفني
+            </h3>
+            <form id="supportForm" onsubmit="sendSupportMessage(event)">
+                <div class="mb-4">
+                    <input type="text" id="supportName" placeholder="الاسم" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-purple-500" required>
+                </div>
+                <div class="mb-4">
+                    <input type="email" id="supportEmail" placeholder="البريد الإلكتروني" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-purple-500" required>
+                </div>
+                <div class="mb-4">
+                    <select id="supportType" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-purple-500">
+                        <option>مشكلة في منتج</option>
+                        <option>استفسار عن بوت</option>
+                        <option>طلب خدمة مخصصة</option>
+                        <option>أخرى</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <textarea id="supportMessage" rows="4" placeholder="رسالتك" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-purple-500" required></textarea>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-l from-purple-600 to-pink-600 text-white py-3 rounded-lg font-bold hover:opacity-90 transition">
+                    إرسال للدعم
+                </button>
+            </form>
+            <div id="supportSuccess" class="hidden mt-4 p-4 bg-green-100 text-green-700 rounded-lg text-center"></div>
+        </div>
+
+        <!-- روابط التواصل - فقط ديسكورد وانستغرام -->
+        <div id="contact" class="glass-card rounded-3xl p-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+                <i class="fas fa-globe ml-2 text-purple-600"></i>
+                تواصل معنا
+            </h3>
+            <div class="space-y-4">
+                <!-- ديسكورد -->
+                <a href="https://discord.gg" target="_blank" class="flex items-center p-4 bg-[#5865f2] text-white rounded-xl hover:opacity-90 transition">
+                    <i class="fab fa-discord text-2xl ml-4"></i>
+                    <div>
+                        <h4 class="font-bold">ديسكورد</h4>
+                        <p class="text-sm opacity-90">انضم إلى سيرفر الدعم</p>
+                    </div>
+                </a>
+                
+                <!-- انستغرام -->
+                <a href="https://instagram.com" target="_blank" class="flex items-center p-4 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcaf45] text-white rounded-xl hover:opacity-90 transition">
+                    <i class="fab fa-instagram text-2xl ml-4"></i>
+                    <div>
+                        <h4 class="font-bold">انستغرام</h4>
+                        <p class="text-sm opacity-90">تابعنا للحصول على آخر التحديثات</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- تذييل الصفحة -->
+<footer class="bg-gray-900 text-white py-8 mt-16">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+        <p>جميع الحقوق محفوظة &copy; 2024 متجر البوتات والحسابات</p>
+    </div>
+</footer>
+
+<script>
+    // =====================================
+    // بيانات المنتجات
+    // =====================================
+    const products = [
+        { id: 1, name: "Music Bot Pro", category: "بوت ديسكورد", price: 10.99, icon: "fa-discord", color: "from-red-600 to-pink-600", description: "بوت موسيقى متطور" },
+        { id: 2, name: "Netflix Premium", category: "حساب", price: 10.99, icon: "fa-netflix", color: "from-red-600 to-red-800", description: "حساب Netflix Premium لمدة شهر" },
+        { id: 3, name: "Moderation Bot", category: "بوت ديسكورد", price: 10.99, icon: "fa-shield-alt", color: "from-green-600 to-emerald-600", description: "بوت إدارة متكامل" },
+        { id: 4, name: "Spotify Premium", category: "حساب", price: 10.99, icon: "fa-spotify", color: "from-green-500 to-green-700", description: "حساب Spotify Premium" },
+        { id: 5, name: "خدمة تصميم سيرفر", category: "خدمة", price: 10.99, icon: "fa-paint-brush", color: "from-orange-600 to-red-600", description: "تصميم سيرفر ديسكورد كامل" },
+        { id: 6, name: "Economy Bot", category: "بوت ديسكورد", price: 10.99, icon: "fa-coins", color: "from-yellow-600 to-orange-600", description: "بوت اقتصاد متكامل" },
+        { id: 7, name: "Disney+", category: "حساب", price: 10.99, icon: "fa-disney", color: "from-blue-700 to-indigo-700", description: "حساب Disney+ Premium" },
+        { id: 8, name: "بوت تذاكر متطور", category: "بوت ديسكورد", price: 10.99, icon: "fa-ticket-alt", color: "from-purple-600 to-indigo-600", description: "نظام تذاكر متكامل" },
+        { id: 9, name: "حساب Xbox Game Pass", category: "حساب", price: 39.99, icon: "fa-xbox", color: "from-green-600 to-green-800", description: "حساب Xbox Game Pass Ultimate" },
+        { id: 10, name: "حساب Steam", category: "حساب", price: 15.99, icon: "fa-steam", color: "from-gray-700 to-gray-900", description: "حساب Steam مع ألعاب متنوعة" },
+        { id: 11, name: "حساب Canva Pro", category: "حساب", price: 24.99, icon: "fa-paint-brush", color: "from-blue-500 to-purple-500", description: "حساب Canva Pro لمدة 6 أشهر" },
+        { id: 12, name: "بوت Welcome Pro", category: "بوت ديسكورد", price: 19.99, icon: "fa-hand-peace", color: "from-indigo-500 to-purple-500", description: "بوت ترحيب متطور" },
+        { id: 13, name: "حساب Adobe CC", category: "حساب", price: 89.99, icon: "fa-adobe", color: "from-red-600 to-red-800", description: "حساب Adobe Creative Cloud" },
+        { id: 14, name: "Discord Nitro", category: "حساب", price: 34.99, icon: "fa-discord", color: "from-indigo-600 to-purple-600", description: "اشتراك نيترو كلاسيك 3 أشهر" }
+    ];
+
+    // سلة التسوق
+    let cart = [];
+
+    // =====================================
+    // دوال الإشعارات
+    // =====================================
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+            type === 'success' ? 'bg-green-500' : 
+            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        }`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // =====================================
+    // دوال عرض المنتجات
+    // =====================================
+    function displayProducts() {
+        const grid = document.getElementById('productsGrid');
+        if (!grid) return;
+        
+        grid.innerHTML = '';
+        
+        products.forEach(product => {
+            const productCard = `
+                <div class="glass-card rounded-2xl overflow-hidden product-card">
+                    <div class="bg-gradient-to-l ${product.color} p-4 text-white">
+                        <div class="flex items-center justify-between">
+                            <i class="fab ${product.icon} text-2xl"></i>
+                            <span class="bg-white/20 px-3 py-1 rounded-full text-xs">${product.category}</span>
+                        </div>
+                        <h3 class="text-xl font-bold mt-2">${product.name}</h3>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-600 mb-4">${product.description}</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-2xl font-bold text-purple-600">$${product.price}</span>
+                            <button onclick="addToCart(${product.id})" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition flex items-center">
+                                <i class="fas fa-shopping-cart ml-2 text-sm"></i>
+                                أضف للسلة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML += productCard;
+        });
+    }
+
+    // =====================================
+    // دوال السلة
+    // =====================================
+    window.addToCart = function(productId) {
+        const product = products.find(p => p.id === productId);
+        cart.push(product);
+        updateCart();
+        showNotification('✅ تم إضافة المنتج للسلة', 'success');
+    };
+
+    window.removeFromCart = function(index) {
+        cart.splice(index, 1);
+        updateCart();
+        showNotification('🗑️ تم حذف المنتج من السلة', 'info');
+    };
+
+    window.toggleCart = function() {
+        const cart = document.getElementById('cartSidebar');
+        cart.classList.toggle('-translate-x-full');
+    };
+
+    function updateCart() {
+        const cartItems = document.getElementById('cartItems');
+        const cartCount = document.getElementById('cartCount');
+        const cartTotal = document.getElementById('cartTotal');
+        
+        if (!cartItems) return;
+        
+        cartItems.innerHTML = '';
+        let total = 0;
+        
+        cart.forEach((item, index) => {
+            total += item.price;
+            cartItems.innerHTML += `
+                <div class="flex items-center justify-between border-b border-gray-200 py-4">
+                    <div>
+                        <h4 class="font-bold text-gray-800">${item.name}</h4>
+                        <p class="text-sm text-gray-600">$${item.price}</p>
+                    </div>
+                    <button onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+        });
+        
+        if (cart.length === 0) {
+            cartItems.innerHTML = '<p class="text-center text-gray-500 py-8">السلة فارغة</p>';
+        }
+        
+        cartCount.textContent = cart.length;
+        cartTotal.textContent = '$' + total.toFixed(2);
+    }
+
+    // =====================================
+    // دوال الدفع
+    // =====================================
+    window.showPaymentOptions = function() {
+        if (cart.length === 0) {
+            showNotification('❌ السلة فارغة', 'error');
+            return;
+        }
+        
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        document.getElementById('modalTotal').textContent = '$' + total.toFixed(2);
+        document.getElementById('paymentModal').classList.remove('hidden');
+        document.getElementById('paymentModal').classList.add('flex');
+    };
+
+    window.closePaymentModal = function() {
+        document.getElementById('paymentModal').classList.add('hidden');
+        document.getElementById('paymentModal').classList.remove('flex');
+    };
+
+    window.processPayment = function(method) {
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        
+        if (method === 'paypal') {
+            showNotification('🔄 جاري التوجيه إلى PayPal...', 'info');
+            setTimeout(() => {
+                showNotification('✅ تم إتمام الدفع عبر PayPal بنجاح', 'success');
+                completeOrder();
+            }, 2000);
+        }
+        else if (method === 'probot') {
+            // حساب الكريدت المطلوب (1 كريدت = $0.01)
+            const creditsNeeded = Math.ceil(total * 100);
+            showNotification(`🤖 تحتاج ${creditsNeeded} كريدت للدفع`, 'info');
+            
+            setTimeout(() => {
+                showNotification(`✅ تم خصم ${creditsNeeded} كريدت من حساب ProBot`, 'success');
+                completeOrder();
+            }, 2000);
+        }
+    };
+
+    function completeOrder() {
+        cart = [];
+        updateCart();
+        closePaymentModal();
+        showNotification('✅ تم إتمام الطلب بنجاح! شكراً لك', 'success');
+    }
+
+    // =====================================
+    // دوال الدعم الفني
+    // =====================================
+    window.sendSupportMessage = function(event) {
+        event.preventDefault();
+        
+        const name = document.getElementById('supportName').value;
+        const email = document.getElementById('supportEmail').value;
+        const type = document.getElementById('supportType').value;
+        const message = document.getElementById('supportMessage').value;
+        
+        // محاكاة إرسال الرسالة
+        showNotification('📨 جاري إرسال رسالتك...', 'info');
+        
+        setTimeout(() => {
+            document.getElementById('supportForm').reset();
+            const successDiv = document.getElementById('supportSuccess');
+            successDiv.classList.remove('hidden');
+            successDiv.innerHTML = '✅ تم إرسال رسالتك بنجاح! سنتواصل معك قريباً';
+            
+            setTimeout(() => {
+                successDiv.classList.add('hidden');
+            }, 5000);
+            
+            showNotification('✅ تم إرسال رسالتك بنجاح', 'success');
+        }, 1500);
+    };
+
+    // =====================================
+    // التهيئة
+    // =====================================
+    document.addEventListener('DOMContentLoaded', function() {
+        displayProducts();
+        updateCart();
+    });
+</script>
+</body>
+</html>
